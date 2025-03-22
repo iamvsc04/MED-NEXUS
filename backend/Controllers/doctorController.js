@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const UserModel = require("../Models/UserModel");
 const DoctorModel = require("../Models/DoctorModel");
 const AppointmentModel = require("../Models/AppointmentModel");
+const { v4: uuidV4 } = require('uuid');
 
 const addDoctor = async (req, res) => {
   try {
@@ -78,10 +79,9 @@ const getAppointments = async (req, res) => {
     console.log(doctorId);
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
-    console.log(today);
     const tomorrowIST = new Date(today);
     tomorrowIST.setDate(today.getDate() + 2);
-    console.log(tomorrowIST);
+
     const appointments = await AppointmentModel.find({
       doctorId,
       status: "Accepted",
@@ -91,7 +91,13 @@ const getAppointments = async (req, res) => {
       },
     }).populate("patientId", "userName");
 
-    res.status(200).json(appointments);
+    // Add a video call link for each appointment
+    const updatedAppointments = appointments.map((appointment) => ({
+      ...appointment.toObject(),
+      videoCallLink: `/video/${uuidV4()}`
+    }));
+
+    res.status(200).json(updatedAppointments);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
